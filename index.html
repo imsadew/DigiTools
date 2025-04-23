@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en" class="dark"> <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Tools App - Full Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        /* --- Base & Theme Variables --- */
+        :root {
+            --bg-light: #f8fafc; --bg-dark: #020617;
+            --card-bg-light: #ffffff; --card-bg-dark: #0f172a; /* slate-900 */
+            --header-bg-light: #ffffff; --header-bg-dark: #0f172a;
+            --text-light: #0f172a; --text-dark: #e2e8f0;
+            --text-muted-light: #64748b; --text-muted-dark: #94a3b8;
+            --border-light: #e2e8f0; --border-dark: #1e293b; /* slate-800 */
+            --accent-blue: #2563eb;
+            --header-height: 64px; /* 4rem */
+        }
+
+        /* --- General Styles & Dark Mode --- */
+        html { scroll-behavior: smooth; }
+        body {
+            min-height: 100vh;
+            background-color: var(--bg-dark); color: var(--text-dark);
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            padding-top: var(--header-height);
+        }
+        .light body { background-color: var(--bg-light); color: var(--text-light); }
+        /* Helper classes */
+        .bg-theme { background-color: var(--bg-dark); } .light .bg-theme { background-color: var(--bg-light); }
+        .bg-card { background-color: var(--card-bg-dark); } .light .bg-card { background-color: var(--card-bg-light); }
+        .text-color { color: var(--text-dark); } .light .text-color { color: var(--text-light); }
+        .text-muted { color: var(--text-muted-dark); } .light .text-muted { color: var(--text-muted-light); }
+        .border-color { border-color: var(--border-dark); } .light .border-color { border-color: var(--border-light); }
+        .shadow-minimal { box-shadow: 0 1px 3px 0 rgba(255, 255, 255, 0.04), 0 1px 2px -1px rgba(255, 255, 255, 0.03); }
+        .light .shadow-minimal { box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); }
+
+
+        /* Input/Select styles */
+        input, select, textarea, button.input-style {
+            background-color: #1e293b; border-color: #334155; color: #e5e7eb;
+        }
+         input::placeholder, textarea::placeholder { color: #64748b; }
+         select {
+             background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20"%3E%3Cpath stroke="%2394a3b8" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 8l4 4 4-4"/%3E%3C/svg%3E');
+             background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1.5em 1.5em;
+             padding-right: 2.5rem; appearance: none; -webkit-appearance: none;
+         }
+         button.input-style:hover { background-color: #334155; }
+         /* Light mode input styles */
+         .light input, .light select, .light textarea, .light button.input-style {
+             background-color: #f8fafc; border-color: #e2e8f0; color: #0f172a;
+         }
+         .light input::placeholder, .light textarea::placeholder { color: #94a3b8; }
+         .light select {
+             background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20"%3E%3Cpath stroke="%2364748b" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 8l4 4 4-4"/%3E%3C/svg%3E');
+         }
+          .light button.input-style:hover { background-color: #e2e8f0; }
+
+
+        /* --- Layout & Header --- */
+        .app-header {
+            position: fixed; top: 0; left: 0; right: 0; height: var(--header-height);
+            background-color: var(--header-bg-dark); color: var(--text-dark);
+            border-bottom: 1px solid var(--border-dark); display: flex; align-items: center;
+            padding: 0 1.5rem; z-index: 40;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        .light .app-header { background-color: var(--header-bg-light); color: var(--text-light); border-bottom-color: var(--border-light); }
+        .header-link {
+             padding: 0.5rem 0.75rem; border-radius: 0.375rem;
+             transition: background-color 0.2s ease; font-weight: 500;
+             display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;
+        }
+        .header-link:hover { background-color: rgba(255, 255, 255, 0.05); }
+        .light .header-link:hover { background-color: rgba(0, 0, 0, 0.05); }
+        .header-link.active { background-color: var(--accent-blue); color: #fff; }
+        .light .header-link.active { background-color: var(--accent-blue); color: #fff; }
+
+        .content-area { flex-grow: 1; overflow-y: auto; height: calc(100vh - var(--header-height)); padding: 2rem; }
+
+        /* --- Tool Launcher & Tool Container --- */
+        .tool-launcher-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;
+        }
+        .tool-launcher-card {
+            border: 1px solid var(--border-dark); border-radius: 0.5rem; padding: 1.5rem;
+            background-color: var(--card-bg-dark);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 150px;
+        }
+        .light .tool-launcher-card { border-color: var(--border-light); background-color: var(--card-bg-light); }
+        .tool-launcher-card:hover { transform: translateY(-3px); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); }
+        .light .tool-launcher-card:hover { box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); }
+        .tool-launcher-card i { font-size: 1.75rem; margin-bottom: 0.75rem; color: var(--accent-blue); }
+        .tool-launcher-card h3 { font-weight: 600; margin-bottom: 0.25rem; font-size: 1rem; }
+        .tool-launcher-card p { font-size: 0.8rem; color: var(--text-muted-dark); }
+        .light .tool-launcher-card p { color: var(--text-muted-light); }
+        .tool-launcher-card.coming-soon { opacity: 0.5; cursor: not-allowed; }
+        .tool-launcher-card.coming-soon:hover { transform: none; box-shadow: none; }
+
+        .tool-container { display: none; }
+        .tool-container.active { display: block; animation: toolFadeIn 0.4s ease-out; }
+        @keyframes toolFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .tool-card { border: 1px solid var(--border-dark); border-radius: 0.5rem; padding: 1.5rem; }
+        .light .tool-card { border-color: var(--border-light); }
+
+        /* Common Tool Styles */
+        .tool-section { margin-bottom: 1.5rem; }
+        .tool-label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text-muted-dark); }
+        .light .tool-label { color: var(--text-muted-light); }
+        .tool-input, .tool-textarea, .tool-select {
+            width: 100%; padding: 0.75rem; border: 1px solid; border-radius: 0.375rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            font-size: 0.9rem;
+        }
+        .tool-input:focus, .tool-textarea:focus, .tool-select:focus {
+            outline: none; border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
+        }
+        .tool-textarea { min-height: 120px; resize: vertical; }
+        .tool-button {
+            padding: 0.75rem 1.5rem; border-radius: 0.375rem; font-weight: 500;
+            transition: background-color 0.2s ease, transform 0.1s ease; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 0.5rem; justify-content: center;
+        }
+        .tool-button:active { transform: scale(0.98); }
+        .button-primary { background-color: var(--accent-blue); color: #fff; }
+        .button-primary:hover { background-color: #1d4ed8; }
+        .button-secondary { background-color: #334155; color: var(--text-dark); border: 1px solid #475569; }
+        .button-secondary:hover { background-color: #475569; }
+        .light .button-secondary { background-color: #e2e8f0; color: var(--text-light); border-color: #cbd5e1; }
+        .light .button-secondary:hover { background-color: #cbd5e1; }
+        .tool-result {
+            margin-top: 1rem; padding: 1rem; border-radius: 0.375rem;
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px dashed var(--border-dark);
+            font-family: monospace; white-space: pre-wrap; word-wrap: break-word;
+            min-height: 50px; user-select: text;
+        }
+        .light .tool-result { background-color: rgba(0, 0, 0, 0.02); border-color: var(--border-light); }
+
+        /* Specific Tool Styles */
+        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+        .calc-button { padding: 1rem; font-size: 1.1rem; }
+        .calc-display { padding: 1rem; font-size: 1.8rem; margin-bottom: 1rem; }
+        .color-preview { height: 80px; margin-bottom: 1rem; }
+        #qr-code-output { display: flex; justify-content: center; align-items: center; min-height: 200px; }
+        #qr-code-output img { max-width: 100%; height: auto; border: 1px solid var(--border-dark); padding: 5px; background-color: white; } /* QR code needs white bg */
+        #stopwatch-display { font-size: 2.5rem; font-family: monospace; }
+        #on-page-ruler { position: absolute; height: 20px; background-color: rgba(255, 215, 0, 0.7); border: 1px solid gold; cursor: grab; user-select: none; z-index: 100; display: none; }
+        #ruler-measure { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); background: black; color: white; padding: 2px 5px; font-size: 10px; border-radius: 3px; white-space: nowrap; }
+        .font-preview { font-size: 1.5rem; padding: 1rem; border: 1px dashed var(--border-dark); margin-top: 0.5rem; }
+        .light .font-preview { border-color: var(--border-light); }
+
+        /* Settings Page */
+        .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border-dark); }
+        .light .setting-item { border-bottom-color: var(--border-light); }
+        .setting-item:last-child { border-bottom: none; }
+        .toggle-switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; cursor: pointer; inset: 0; background-color: #334155; transition: .4s; border-radius: 34px; }
+        .light .toggle-slider { background-color: #ccc; }
+        .toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .toggle-slider { background-color: var(--accent-blue); }
+        input:focus + .toggle-slider { box-shadow: 0 0 0 2px var(--accent-blue); }
+        input:checked + .toggle-slider:before { transform: translateX(24px); }
+
+
+        /* --- Responsive --- */
+        @media (max-width: 768px) {
+            .app-header { padding: 0 1rem; }
+            .header-link span { display: none; }
+            .content-area { padding: 1rem; }
+            .tool-launcher-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
+        }
+
+    </style>
+</head>
+<body class="bg-theme text-color">
+
+    <header class="app-header shadow-minimal">
+        <div class="flex items-center gap-2 mr-6">
+             <i class="fas fa-toolbox text-blue-500 text-xl"></i>
+             <h1 class="text-xl font-semibold text-color">DigiTools</h1>
+        </div>
+        <nav class="flex items-center gap-2">
+             <a href="#dashboard" class="header-link" data-tool="dashboard" title="Dashboard">
+                 <i class="fas fa-th-large fa-fw"></i>
+                 <span>Dashboard</span>
+             </a>
+             <a href="#settings" class="header-link" data-tool="settings" title="Settings">
+                 <i class="fas fa-cog fa-fw"></i>
+                 <span>Settings</span>
+             </a>
+             </nav>
+        </header>
+
+
+    <main id="mainContent" class="content-area">
+
+        <div id="tool-dashboard" class="tool-container active">
+             <h1 class="text-3xl font-semibold text-color mb-6">Tools Dashboard</h1>
+             <div class="tool-launcher-grid">
+                 <div class="tool-launcher-card shadow-minimal" data-tool="calculator"><i class="fas fa-calculator"></i> <h3 class="text-color">Calculator</h3> <p>Basic calculations.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="unit-converter"><i class="fas fa-ruler-combined"></i> <h3 class="text-color">Unit Converter</h3> <p>Length, weight, temp.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="text-analyzer"><i class="fas fa-file-word"></i> <h3 class="text-color">Text Analyzer</h3> <p>Count words, chars, etc.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="color-converter"><i class="fas fa-palette"></i> <h3 class="text-color">Color Converter</h3> <p>Convert HEX, RGB, HSL.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="password-generator"><i class="fas fa-key"></i> <h3 class="text-color">Password Generator</h3> <p>Create strong passwords.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="base64"><i class="fas fa-sync-alt"></i> <h3 class="text-color">Base64</h3> <p>Encode/decode Base64.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="currency-converter"><i class="fas fa-dollar-sign"></i> <h3 class="text-color">Currency Converter</h3> <p>Convert currencies (demo).</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="lorem-ipsum"><i class="fas fa-paragraph"></i> <h3 class="text-color">Lorem Ipsum</h3> <p>Generate placeholder text.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="bmi-calculator"><i class="fas fa-weight-scale"></i> <h3 class="text-color">BMI Calculator</h3> <p>Calculate Body Mass Index.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="date-calculator"><i class="fas fa-calendar-days"></i> <h3 class="text-color">Date Calculator</h3> <p>Days between dates.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="json-formatter"><i class="fas fa-code"></i> <h3 class="text-color">JSON Formatter</h3> <p>Format & validate JSON.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="image-converter"><i class="fas fa-image"></i> <h3 class="text-color">Image Converter</h3> <p>Basic PNG/JPEG conversion.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="qr-code"><i class="fas fa-qrcode"></i> <h3 class="text-color">QR Code Generator</h3> <p>Generate QR codes.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="notes"><i class="fas fa-sticky-note"></i> <h3 class="text-color">Notes</h3> <p>Simple local notes.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="stopwatch"><i class="fas fa-stopwatch"></i> <h3 class="text-color">Stopwatch</h3> <p>Time intervals.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="on-page-ruler"><i class="fas fa-ruler-horizontal"></i> <h3 class="text-color">On-Page Ruler</h3> <p>Measure page elements.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="percentage-calculator"><i class="fas fa-percentage"></i> <h3 class="text-color">Percentage Calc</h3> <p>Calculate percentages.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="case-converter"><i class="fas fa-text-height"></i> <h3 class="text-color">Case Converter</h3> <p>Advanced text case changes.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="url-encoder"><i class="fas fa-link"></i> <h3 class="text-color">URL Encoder</h3> <p>Encode/decode URLs.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="md5-generator"><i class="fas fa-hashtag"></i> <h3 class="text-color">MD5 Generator</h3> <p>Generate MD5 hash.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="csv-to-json"><i class="fas fa-file-csv"></i> <h3 class="text-color">CSV to JSON</h3> <p>Convert CSV data.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="font-viewer"><i class="fas fa-font"></i> <h3 class="text-color">Font Viewer</h3> <p>Preview text in fonts.</p></div>
+                 <div class="tool-launcher-card shadow-minimal" data-tool="text-compressor"><i class="fas fa-compress-alt"></i> <h3 class="text-color">Text Compressor</h3> <p>Basic RLE compression.</p></div>
+
+                 <div class="tool-launcher-card shadow-minimal coming-soon"><i class="fas fa-file-pdf"></i> <h3 class="text-color">PDF Tools</h3> <p>Coming Soon</p></div>
+                 <div class="tool-launcher-card shadow-minimal coming-soon"><i class="fas fa-video"></i> <h3 class="text-color">Video Converter</h3> <p>Coming Soon</p></div>
+                 <div class="tool-launcher-card shadow-minimal coming-soon"><i class="fas fa-random"></i> <h3 class="text-color">Random Number</h3> <p>Coming Soon</p></div>
+                 <div class="tool-launcher-card shadow-minimal coming-soon"><i class="fas fa-clock"></i> <h3 class="text-color">World Clock</h3> <p>Coming Soon</p></div>
+                 <div class="tool-launcher-card shadow-minimal coming-soon"><i class="fas fa-signature"></i> <h3 class="text-color">Signature Pad</h3> <p>Coming Soon</p></div>
+                 <div class="tool-launcher-card shadow-minimal coming-soon"><i class="fas fa-search"></i> <h3 class="text-color">Regex Tester</h3> <p>Coming Soon</p></div>
+                 <div class="tool-launcher-card shadow-minimal coming-soon"><i class="fas fa-palette"></i> <h3 class="text-color">Color Palette Gen</h3> <p>Coming Soon</p></div>
+                 <div class="tool-launcher-card shadow-minimal coming-soon"><i class="fas fa-file-code"></i> <h3 class="text-color">HTML/CSS Minifier</h3> <p>Coming Soon</p></div>
+                 <div class="tool-launcher-card shadow-minimal coming-soon"><i class="fab fa-markdown"></i> <h3 class="text-color">Markdown Preview</h3> <p>Coming Soon</p></div>
+                 </div>
+        </div>
+
+        <div id="tool-calculator" class="tool-container">
+            <h1 class="text-2xl font-semibold text-color mb-6">Simple Calculator</h1>
+            <div class="tool-card bg-card shadow-minimal max-w-md mx-auto">
+                <div id="calc-display" class="calc-display text-color">0</div>
+                <div class="calc-grid">
+                    <button class="calc-button input-style text-color" data-calc="clear">AC</button> <button class="calc-button input-style text-color" data-calc="sign">+/-</button> <button class="calc-button input-style text-color" data-calc="percent">%</button> <button class="calc-button op" data-calc="op">/</button>
+                    <button class="calc-button input-style text-color" data-calc="num">7</button> <button class="calc-button input-style text-color" data-calc="num">8</button> <button class="calc-button input-style text-color" data-calc="num">9</button> <button class="calc-button op" data-calc="op">*</button>
+                    <button class="calc-button input-style text-color" data-calc="num">4</button> <button class="calc-button input-style text-color" data-calc="num">5</button> <button class="calc-button input-style text-color" data-calc="num">6</button> <button class="calc-button op" data-calc="op">-</button>
+                    <button class="calc-button input-style text-color" data-calc="num">1</button> <button class="calc-button input-style text-color" data-calc="num">2</button> <button class="calc-button input-style text-color" data-calc="num">3</button> <button class="calc-button op" data-calc="op">+</button>
+                    <button class="calc-button input-style text-color" data-calc="num">0</button> <button class="calc-button input-style text-color" data-calc="decimal">.</button> <button class="calc-button eq" data-calc="eq">=</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tool-unit-converter" class="tool-container">
+            <h1 class="text-2xl font-semibold text-color mb-6">Unit Converter</h1>
+            <div class="tool-card bg-card shadow-minimal">
+                <div class="tool-section"><label for="unit-type-select" class="tool-label">Type</label><select id="unit-type-select" class="tool-select appearance-none"><option value="length">Length</option> <option value="weight">Weight</option> <option value="temperature">Temperature</option></select></div>
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                    <div class="md:col-span-2"><label for="unit-input-value" class="tool-label">Input</label><input type="number" id="unit-input-value" class="tool-input" placeholder="Value"></div>
+                    <div class="md:col-span-1"><label for="unit-from-select" class="tool-label">From</label><select id="unit-from-select" class="tool-select appearance-none"></select></div>
+                    <div class="md:col-span-1"><label for="unit-to-select" class="tool-label">To</label><select id="unit-to-select" class="tool-select appearance-none"></select></div>
+                    <div class="md:col-span-1"><button id="unit-convert-btn" class="tool-button button-primary w-full"><i class="fas fa-exchange-alt"></i></button></div>
+                </div>
+                <div class="tool-section mt-4"><label class="tool-label">Result</label><div id="unit-result" class="tool-result text-color">...</div></div>
+            </div>
+        </div>
+
+        <div id="tool-text-analyzer" class="tool-container">
+             <h1 class="text-2xl font-semibold text-color mb-6">Text Analyzer</h1>
+             <div class="tool-card bg-card shadow-minimal">
+                 <div class="tool-section"><label for="text-analyzer-input" class="tool-label">Text</label><textarea id="text-analyzer-input" class="tool-textarea" placeholder="Paste text..."></textarea></div>
+                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-center">
+                     <div><p class="text-sm text-muted">Chars</p><p id="text-char-count" class="text-xl font-semibold text-color">0</p></div>
+                     <div><p class="text-sm text-muted">Words</p><p id="text-word-count" class="text-xl font-semibold text-color">0</p></div>
+                     <div><p class="text-sm text-muted">Lines</p><p id="text-line-count" class="text-xl font-semibold text-color">0</p></div>
+                     <div><p class="text-sm text-muted">Sentences</p><p id="text-sentence-count" class="text-xl font-semibold text-color">0</p></div>
+                 </div>
+                 <div class="tool-section border-t border-color pt-4"><label class="tool-label">Case</label><div class="flex flex-wrap gap-2"><button class="tool-button button-secondary text-sm" data-case="upper">UPPER</button><button class="tool-button button-secondary text-sm" data-case="lower">lower</button><button class="tool-button button-secondary text-sm" data-case="sentence">Sentence</button><button class="tool-button button-secondary text-sm" data-case="title">Title</button><button class="tool-button button-secondary text-sm" data-case="clear"><i class="fas fa-times"></i></button></div></div>
+             </div>
+        </div>
+
+        <div id="tool-color-converter" class="tool-container">
+             <h1 class="text-2xl font-semibold text-color mb-6">Color Converter</h1>
+             <div class="tool-card bg-card shadow-minimal">
+                <div class="color-preview border-color" id="color-preview"></div>
+                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                     <div class="tool-section"><label for="color-hex-input" class="tool-label">HEX</label><input type="text" id="color-hex-input" class="tool-input" placeholder="#RRGGBB"></div>
+                      <div class="tool-section"><label for="color-rgb-input" class="tool-label">RGB</label><input type="text" id="color-rgb-input" class="tool-input" placeholder="rgb(R, G, B)"></div>
+                      <div class="tool-section"><label for="color-hsl-input" class="tool-label">HSL</label><input type="text" id="color-hsl-input" class="tool-input" placeholder="hsl(H, S%, L%)"></div>
+                 </div>
+                  <div class="tool-section mt-2"><label for="color-picker-input" class="tool-label">Picker</label><input type="color" id="color-picker-input" class="w-full h-10 border-0 cursor-pointer rounded-md"></div>
+             </div>
+        </div>
+
+        <div id="tool-password-generator" class="tool-container">
+            <h1 class="text-2xl font-semibold text-color mb-6">Password Generator</h1>
+             <div class="tool-card bg-card shadow-minimal">
+                 <div class="tool-section"><label class="tool-label">Password</label><div class="flex gap-2"><input type="text" id="password-output" class="tool-input flex-grow" readonly placeholder="..."><button id="password-copy-btn" class="tool-button button-secondary" title="Copy"><i class="far fa-copy"></i></button></div></div>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                     <div class="tool-section"><label for="password-length" class="tool-label">Length: <span id="password-length-value">16</span></label><input type="range" id="password-length" min="8" max="64" value="16" class="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"></div>
+                     <div class="tool-section flex items-center gap-4 pt-5"><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="password-include-uppercase" class="w-4 h-4 accent-blue-600" checked> A-Z</label><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="password-include-lowercase" class="w-4 h-4 accent-blue-600" checked> a-z</label></div>
+                     <div class="tool-section flex items-center gap-4"><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="password-include-numbers" class="w-4 h-4 accent-blue-600" checked> 0-9</label><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="password-include-symbols" class="w-4 h-4 accent-blue-600" checked> !@#$</label></div>
+                 </div>
+                 <div class="tool-section mt-4"><button id="password-generate-btn" class="tool-button button-primary w-full"><i class="fas fa-sync-alt"></i> Generate</button></div>
+             </div>
+        </div>
+
+        <div id="tool-base64" class="tool-container">
+             <h1 class="text-2xl font-semibold text-color mb-6">Base64 Encoder/Decoder</h1>
+             <div class="tool-card bg-card shadow-minimal">
+                 <div class="tool-section"><label for="base64-input" class="tool-label">Input</label><textarea id="base64-input" class="tool-textarea" placeholder="Text or Base64..."></textarea></div>
+                 <div class="flex flex-wrap gap-3 mb-4"><button id="base64-encode-btn" class="tool-button button-primary"><i class="fas fa-arrow-down"></i> Encode</button><button id="base64-decode-btn" class="tool-button button-primary"><i class="fas fa-arrow-up"></i> Decode</button><button id="base64-clear-btn" class="tool-button button-secondary"><i class="fas fa-times"></i> Clear</button></div>
+                 <div class="tool-section"><label class="tool-label">Output</label><div id="base64-output" class="tool-result text-color">...</div></div>
+                 <p id="base64-error" class="text-red-500 text-sm mt-2"></p>
+             </div>
+        </div>
+
+        <div id="tool-currency-converter" class="tool-container">
+            <h1 class="text-2xl font-semibold text-color mb-6">Currency Converter</h1>
+            <div class="tool-card bg-card shadow-minimal">
+                <p class="text-xs text-yellow-400 bg-yellow-900/50 p-2 rounded mb-4"><i class="fas fa-exclamation-triangle mr-1"></i> Uses placeholder rates.</p>
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                    <div class="md:col-span-2"><label for="currency-amount" class="tool-label">Amount</label><input type="number" id="currency-amount" class="tool-input" placeholder="Amt" value="1"></div>
+                    <div class="md:col-span-1"><label for="currency-from" class="tool-label">From</label><select id="currency-from" class="tool-select appearance-none"></select></div>
+                    <div class="md:col-span-1"><label for="currency-to" class="tool-label">To</label><select id="currency-to" class="tool-select appearance-none"></select></div>
+                    <div class="md:col-span-1"><button id="currency-convert-btn" class="tool-button button-primary w-full"><i class="fas fa-exchange-alt"></i></button></div>
+                </div>
+                <div class="tool-section mt-4"><label class="tool-label">Result</label><div id="currency-result" class="tool-result text-color">...</div></div>
+            </div>
+        </div>
+
+        <div id="tool-lorem-ipsum" class="tool-container">
+            <h1 class="text-2xl font-semibold text-color mb-6">Lorem Ipsum Generator</h1>
+            <div class="tool-card bg-card shadow-minimal">
+                <div class="tool-section"><label for="lorem-count" class="tool-label">Paragraphs</label><input type="number" id="lorem-count" class="tool-input w-32" value="3" min="1" max="20"></div>
+                <div class="tool-section"><button id="lorem-generate-btn" class="tool-button button-primary"><i class="fas fa-sync-alt"></i> Generate</button><button id="lorem-copy-btn" class="tool-button button-secondary ml-2" title="Copy"><i class="far fa-copy"></i> Copy</button></div>
+                <div class="tool-section"><label class="tool-label">Generated Text</label><textarea id="lorem-output" class="tool-textarea !min-h-[200px]" readonly></textarea></div>
+            </div>
+        </div>
+
+        <div id="tool-bmi-calculator" class="tool-container">
+             <h1 class="text-2xl font-semibold text-color mb-6">BMI Calculator</h1>
+             <div class="tool-card bg-card shadow-minimal">
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div class="tool-section"><label for="bmi-weight" class="tool-label">Weight (kg)</label><input type="number" id="bmi-weight" class="tool-input" placeholder="e.g., 70"></div>
+                     <div class="tool-section"><label for="bmi-height" class="tool-label">Height (cm)</label><input type="number" id="bmi-height" class="tool-input" placeholder="e.g., 175"></div>
+                 </div>
+                 <div class="tool-section mt-4"><button id="bmi-calculate-btn" class="tool-button button-primary"><i class="fas fa-calculator"></i> Calculate</button></div>
+                 <div class="tool-section"><label class="tool-label">Result</label><div id="bmi-result" class="tool-result text-color">...</div></div>
+             </div>
+        </div>
+
+        <div id="tool-date-calculator" class="tool-container">
+            <h1 class="text-2xl font-semibold text-color mb-6">Date Calculator</h1>
+            <div class="tool-card bg-card shadow-minimal">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div class="tool-section"><label for="date-start" class="tool-label">Start Date</label><input type="date" id="date-start" class="tool-input"></div>
+                     <div class="tool-section"><label for="date-end" class="tool-label">End Date</label><input type="date" id="date-end" class="tool-input"></div>
+                </div>
+                 <div class="tool-section mt-4"><button id="date-calculate-btn" class="tool-button button-primary"><i class="fas fa-calendar-alt"></i> Calculate</button></div>
+                 <div class="tool-section"><label class="tool-label">Difference</label><div id="date-result" class="tool-result text-color">...</div></div>
+            </div>
+        </div>
+
+        <div id="tool-json-formatter" class="tool-container">
+             <h1 class="text-2xl font-semibold text-color mb-6">JSON Formatter & Validator</h1>
+             <div class="tool-card bg-card shadow-minimal">
+                 <div class="tool-section"><label for="json-input" class="tool-label">Input JSON</label><textarea id="json-input" class="tool-textarea !min-h-[200px] font-mono" placeholder="Paste JSON..."></textarea></div>
+                 <div class="flex flex-wrap gap-3 mb-4"><button id="json-format-btn" class="tool-button button-primary"><i class="fas fa-align-left"></i> Format</button><button id="json-validate-btn" class="tool-button button-secondary"><i class="fas fa-check"></i> Validate</button><button id="json-clear-btn" class="tool-button button-secondary"><i class="fas fa-times"></i> Clear</button></div>
+                 <div class="tool-section"><label class="tool-label">Output / Status</label><div id="json-output" class="tool-result text-color">...</div></div>
+                 <p id="json-error" class="text-red-500 text-sm mt-2"></p>
+             </div>
+        </div>
+
+        <div id="tool-image-converter" class="tool-container">
+            <h1 class="text-2xl font-semibold text-color mb-6">Basic Image Converter</h1>
+            <div class="tool-card bg-card shadow-minimal">
+                <p class="text-xs text-yellow-400 bg-yellow-900/50 p-2 rounded mb-4"><i class="fas fa-info-circle mr-1"></i> Converts loaded images (PNG, JPG, GIF) to PNG or JPEG.</p>
+                <div class="tool-section">
+                    <label for="image-input-file" class="tool-label">Select Image</label>
+                    <input type="file" id="image-input-file" accept="image/png, image/jpeg, image/gif" class="tool-input file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900/30 file:text-blue-700 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-800/30">
+                </div>
+                <div class="flex flex-wrap gap-4 items-end mb-4">
+                    <div class="tool-section">
+                        <label for="image-output-format" class="tool-label">Output Format</label>
+                        <select id="image-output-format" class="tool-select appearance-none">
+                            <option value="image/png">PNG</option>
+                            <option value="image/jpeg">JPEG</option>
+                        </select>
+                    </div>
+                    <div class="tool-section">
+                        <label for="image-quality" class="tool-label">JPEG Quality (0.1-1.0)</label>
+                        <input type="number" id="image-quality" class="tool-input w-24" value="0.9" min="0.1" max="1" step="0.1" disabled>
+                    </div>
+                    <button id="image-convert-btn" class="tool-button button-primary"><i class="fas fa-sync-alt"></i> Convert</button>
+                </div>
+                 <div class="tool-section">
+                     <label class="tool-label">Preview / Download</label>
+                     <div id="image-output-preview" class="tool-result text-color flex justify-center items-center min-h-[150px]">Preview...</div>
+                     <a id="image-download-link" class="tool-button button-secondary mt-2 hidden" download="converted-image"><i class="fas fa-download"></i> Download</a>
+                 </div>
+            </div>
+        </div>
+
+        <div id="tool-qr-code" class="tool-container">
+            <h1 class="text-2xl font-semibold text-color mb-6">QR Code Generator</h1>
+            <div class="tool-card bg-card shadow-minimal">
+                <div class="tool-section">
+                    <label for="qr-input-text" class="tool-label">Text or URL</label>
+                    <input type="text" id="qr-input-text" class="tool-input" placeholder="Enter text or URL to encode">
+                </div>
+                <div class="tool-section">
+                    <button id="qr-generate-btn" class="tool-button button-primary"><i class="fas fa-qrcode"></i> Generate QR Code</button>
+                </div>
+                <div class="tool-section">
+                    <label class="tool-label">QR Code</label>
+                    <div id="qr-code-output" class="tool-result bg-white p-2 inline-block"></div>
+                    <a id="qr-download-link" class="tool-button button-secondary mt-2 hidden" download="qrcode.png"><i class="fas fa-download"></i> Download</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="tool-notes" class="tool-container">
+             <h1 class="text-2xl font-semibold text-color mb-6">Simple Notes</h1>
+             <div class="tool-card bg-card shadow-minimal">
+                 <p class="text-xs text-muted mb-2">Notes are saved automatically in your browser's local storage.</p>
+                 <div class="tool-section">
+                     <textarea id="notes-textarea" class="tool-textarea !min-h-[300px]" placeholder="Start typing your notes..."></textarea>
+                 </div>
+                 <button id="notes-clear-btn" class="tool-button button-secondary !bg-red-800/50 hover:!bg-red-700/60 border-red-700/50 text-red-300 text-sm">
+                     <i class="fas fa-trash-alt mr-1"></i> Clear Notes
+                 </button>
+             </div>
+        </div>
+
+        <div id="tool-stopwatch" class="tool-container">
+            <h1 class="text-2xl font-semibold text-color mb-6">Stopwatch</h1>
+            <div class="tool-card bg-card shadow-minimal text-center max-w-sm mx-auto">
+                <div id="stopwatch-display" class="text-color mb-6">00:00:00.000</div>
+                <div class="flex justify-center gap-4">
+                    <button id="stopwatch-start-btn" class="tool-button button-primary"><i class="fas fa-play"></i> Start</button>
+                    <button id="stopwatch-stop-btn" class="tool-button button-secondary"><i class="fas fa-pause"></i> Stop</button>
+                    <button id="stopwatch-reset-btn" class="tool-button button-secondary"><i class="fas fa-undo"></i> Reset</button>
+                </div>
+            </div>
+        </div>
+
+         <div id="tool-on-page-ruler" class="tool-container">
+            <h1 class="text-2xl font-semibold text-color mb-6">On-Page Ruler</h1>
+            <div class="tool-card bg-card shadow-minimal">
+                 <p class="text-xs text-yellow-400 bg-yellow-900/50 p-2 rounded mb-4"><i class="fas fa-info-circle mr-1"></i> This tool measures elements *within* this webpage, not your entire screen.</p>
+                 <button id="ruler-toggle-btn" class="tool-button button-primary"><i class="fas fa-ruler"></i> Show Ruler</button>
+                 <p class="text-sm text-muted mt-3">Click and drag the yellow ruler to measure elements on the page.</p>
+                 <div id="on-page-ruler"><span id="ruler-measure">0px</span></div>
+            </div>
+        </div>
+
+        <div id="tool-percentage-calculator" class="tool-container">
+            <h1 class="text-2xl font-semibold text-color mb-6">Percentage Calculator</h1>
+            <div class="tool-card bg-card shadow-minimal">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="border border-color rounded p-4">
+                        <p class="font-medium mb-2">What is X% of Y?</p>
+                        <div class="flex gap-2 items-center mb-2">
+                            <input type="number" id="perc-val1" class="tool-input w-20" placeholder="X"> % of
+                            <input type="number" id="perc-val2" class="tool-input w-20" placeholder="Y">
+                        </div>
+                        <button id="perc-calc1-btn" class="tool-button button-secondary text-sm">Calculate</button>
+                        <div id="perc-res1" class="tool-result text-sm mt-2">Result...</div>
+                    </div>
+                    <div class="border border-color rounded p-4">
+                        <p class="font-medium mb-2">X is what % of Y?</p>
+                        <div class="flex gap-2 items-center mb-2">
+                            <input type="number" id="perc-val3" class="tool-input w-20" placeholder="X"> is what % of
+                            <input type="number" id="perc-val4" class="tool-input w-20" placeholder="Y">
+                        </div>
+                        <button id="perc-calc2-btn" class="tool-button button-secondary text-sm">Calculate</button>
+                        <div id="perc-res2" class="tool-result text-sm mt-2">Result...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tool-case-converter" class="tool-container">
+             <h1 class="text-2xl font-semibold text-color mb-6">Advanced Case Converter</h1>
+             <div class="tool-card bg-card shadow-minimal">
+                 <div class="tool-section"><label for="case-input" class="tool-label">Input Text</label><textarea id="case-input" class="tool-textarea" placeholder="Enter text..."></textarea></div>
+                 <div class="tool-section"><label class="tool-label">Convert To</label><div class="flex flex-wrap gap-2"><button class="tool-button button-secondary text-sm" data-adv-case="upper">UPPERCASE</button><button class="tool-button button-secondary text-sm" data-adv-case="lower">lowercase</button><button class="tool-button button-secondary text-sm" data-adv-case="sentence">Sentence case</button><button class="tool-button button-secondary text-sm" data-adv-case="title">Title Case</button><button class="tool-button button-secondary text-sm" data-adv-case="toggle">tOGGLE cASE</button><button class="tool-button button-secondary text-sm" data-adv-case="alternating">AlTeRnAtInG</button></div></div>
+                 <div class="tool-section"><label class="tool-label">Output</label><textarea id="case-output" class="tool-textarea" readonly></textarea></div>
+                 <button id="case-clear-btn" class="tool-button button-secondary text-sm"><i class="fas fa-times"></i> Clear</button>
+                 <button id="case-copy-btn" class="tool-button button-secondary text-sm ml-2" title="Copy Output"><i class="far fa-copy"></i> Copy</button>
+             </div>
+        </div>
+
+        <div id="tool-url-encoder" class="tool-container">
+             <h1 class="text-2xl font-semibold text-color mb-6">URL Encoder/Decoder</h1>
+             <div class="tool-card bg-card shadow-minimal">
+                 <div class="tool-section"><label for="url-input" class="tool-label">Input URL or Text</label><textarea id="url-input" class="tool-textarea" placeholder="Enter URL or text..."></textarea></div>
+                 <div class="flex flex-wrap gap-3 mb-4"><button id="url-encode-btn" class="tool-button button-primary"><i class="fas fa-arrow-down"></i> Encode</button><button id="url-decode-btn" class="tool-button button-primary"><i class="fas fa-arrow-up"></i> Decode</button><button id="url-clear-btn" class="tool-button button-secondary"><i class="fas fa-times"></i> Clear</button></div>
+                 <div class="tool-section"><label class="tool-label">Output</label><textarea id="url-output" class="tool-textarea" readonly></textarea></div>
+                 <p id="url-error" class="text-red-500 text-sm mt-2"></p>
+             </div>
+        </div>
+
+        <div id="tool-md5-generator" class="tool-container">
+             <h1 class="text-2xl font-semibold text-color mb-6">MD5 Hash Generator</h1>
+             <div class="tool-card bg-card shadow-minimal">
+                 <div class="tool-section"><label for="md5-input" class="tool-label">Input Text</label><textarea id="md5-input" class="tool-textarea" placeholder="Enter text to hash..."></textarea></div>
+                 <div class="tool-section"><button id="md5-generate-btn" class="tool-button button-primary"><i class="fas fa-hashtag"></i> Generate MD5</button></div>
+                 <div class="tool-section"><label class="tool-label">MD5 Hash</label><div id="md5-output" class="tool-result text-color break-all">...</div></div>
+                 <button id="md5-copy-btn" class="tool-button button-secondary text-sm mt-2" title="Copy Hash"><i class="far fa-copy"></i> Copy</button>
+             </div>
+        </div>
+
+        <div id="tool-csv-to-json" class="tool-container">
+            <h1 class="text-2xl font-semibold text-color mb-6">CSV to JSON Converter</h1>
+             <div class="tool-card bg-card shadow-minimal">
+                 <div class="tool-section"><label for="csv-input" class="tool-label">Input CSV Data</label><textarea id="csv-input" class="tool-textarea !min-h-[150px] font-mono" placeholder="Paste CSV data here...\nHeader,Row,Example\nValue1,Value2,Value3"></textarea></div>
+                 <div class="tool-section"><label for="csv-delimiter" class="tool-label inline-block mr-2">Delimiter:</label><input type="text" id="csv-delimiter" value="," class="tool-input inline-block w-16"></div>
+                 <div class="flex flex-wrap gap-3 mb-4"><button id="csv-convert-btn" class="tool-button button-primary"><i class="fas fa-sync-alt"></i> Convert to JSON</button><button id="csv-clear-btn" class="tool-button button-secondary"><i class="fas fa-times"></i> Clear</button></div>
+                 <div class="tool-section"><label class="tool-label">Output JSON</label><textarea id="csv-output" class="tool-textarea !min-h-[150px] font-mono" readonly></textarea></div>
+                 <p id="csv-error" class="text-red-500 text-sm mt-2"></p>
+                 <button id="csv-copy-btn" class="tool-button button-secondary text-sm mt-2" title="Copy JSON"><i class="far fa-copy"></i> Copy JSON</button>
+             </div>
+        </div>
+
+        <div id="tool-font-viewer" class="tool-container">
+             <h1 class="text-2xl font-semibold text-color mb-6">Font Viewer</h1>
+             <div class="tool-card bg-card shadow-minimal">
+                 <div class="tool-section"><label for="font-input-text" class="tool-label">Preview Text</label><input type="text" id="font-input-text" class="tool-input" value="The quick brown fox jumps over the lazy dog"></div>
+                 <div class="tool-section"><label for="font-select" class="tool-label">Select Font</label><select id="font-select" class="tool-select appearance-none"></select></div>
+                 <div class="tool-section"><label class="tool-label">Preview</label><div id="font-preview" class="font-preview text-color"></div></div>
+             </div>
+        </div>
+
+        <div id="tool-text-compressor" class="tool-container">
+             <h1 class="text-2xl font-semibold text-color mb-6">Text Compressor (Basic RLE)</h1>
+             <div class="tool-card bg-card shadow-minimal">
+                 <p class="text-xs text-yellow-400 bg-yellow-900/50 p-2 rounded mb-4"><i class="fas fa-info-circle mr-1"></i> Uses simple Run-Length Encoding. May increase size for non-repetitive text.</p>
+                 <div class="tool-section"><label for="compress-input" class="tool-label">Input Text</label><textarea id="compress-input" class="tool-textarea" placeholder="Enter text..."></textarea></div>
+                 <div class="flex flex-wrap gap-3 mb-4"><button id="compress-btn" class="tool-button button-primary"><i class="fas fa-compress-alt"></i> Compress</button><button id="decompress-btn" class="tool-button button-primary"><i class="fas fa-expand-alt"></i> Decompress</button><button id="compress-clear-btn" class="tool-button button-secondary"><i class="fas fa-times"></i> Clear</button></div>
+                 <div class="tool-section"><label class="tool-label">Output</label><textarea id="compress-output" class="tool-textarea" readonly></textarea></div>
+                 <p id="compress-ratio" class="text-sm text-muted mt-2"></p>
+             </div>
+        </div>
+
+
+         <div id="tool-settings" class="tool-container">
+             <h1 class="text-2xl font-semibold text-color mb-6">Settings</h1>
+             <div class="tool-card bg-card shadow-minimal max-w-lg">
+                 <h2 class="text-lg font-semibold text-color mb-4 border-b border-color pb-2">Appearance</h2>
+                 <div class="setting-item">
+                     <label for="theme-toggle" class="text-color">Dark Mode</label>
+                     <label class="toggle-switch">
+                         <input type="checkbox" id="theme-toggle">
+                         <span class="toggle-slider"></span>
+                     </label>
+                 </div>
+                 <h2 class="text-lg font-semibold text-color mb-4 border-b border-color pb-2 mt-6">Data</h2>
+                 <div class="setting-item">
+                      <span class="text-color">Clear Local Data</span>
+                      <button id="clear-data-btn" class="tool-button button-secondary !bg-red-800/50 hover:!bg-red-700/60 border-red-700/50 text-red-300 text-sm">
+                          <i class="fas fa-trash-alt mr-1"></i> Clear All
+                      </button>
+                 </div>
+                 <p class="text-xs text-muted mt-2">Clears theme preference & Notes data from local storage.</p>
+             </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- DOM Elements ---
+        const mainContent = document.getElementById('mainContent');
+        const headerLinks = document.querySelectorAll('.header-link');
+        const toolContainers = document.querySelectorAll('.tool-container');
+        const toolLauncherCards = document.querySelectorAll('.tool-launcher-card');
+        const themeToggle = document.getElementById('theme-toggle');
+        const clearDataBtn = document.getElementById('clear-data-btn');
+
+        // --- Theme Handling ---
+        function applyTheme(isDark) { if(isDark){document.documentElement.classList.add('dark');document.documentElement.classList.remove('light');}else{document.documentElement.classList.add('light');document.documentElement.classList.remove('dark');} localStorage.setItem('digitalToolsTheme', isDark ? 'dark' : 'light'); }
+        function loadTheme() { const savedTheme=localStorage.getItem('digitalToolsTheme'); const prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches; const useDark=savedTheme==='dark'||(!savedTheme&&prefersDark); applyTheme(useDark); if(themeToggle)themeToggle.checked=useDark; }
+        if (themeToggle) { themeToggle.addEventListener('change', (e) => applyTheme(e.target.checked)); }
+
+        // --- Tool Switching ---
+        function switchTool(toolId) { headerLinks.forEach(link => { link.classList.toggle('active', link.dataset.tool === toolId); }); toolContainers.forEach(container => { container.classList.toggle('active', container.id === `tool-${toolId}`); }); console.log("Switched to tool:", toolId); window.location.hash = toolId; }
+
+        // --- Tool Implementations ---
+
+        // [Existing tool JS: Calculator, Unit Converter, Text Analyzer, Color Converter, Password Generator, Base64, Currency Converter]
+        // 1. Calculator
+        const calcDisplay = document.getElementById('calc-display'); const calcButtons = document.querySelectorAll('.calc-button'); let calcCurrentValue = '0'; let calcOperator = null; let calcPreviousValue = null; let calcWaitingForOperand = false; function updateCalcDisplay() { calcDisplay.textContent = calcCurrentValue; } function handleCalcInput(type, value) { switch(type){case 'num':if(calcWaitingForOperand){calcCurrentValue=value;calcWaitingForOperand=false;}else{calcCurrentValue=calcCurrentValue==='0'?value:calcCurrentValue+value;}break;case 'decimal':if(calcWaitingForOperand){calcCurrentValue='0.';calcWaitingForOperand=false;}else if(!calcCurrentValue.includes('.')){calcCurrentValue+='.';}break;case 'op':if(calcOperator&&!calcWaitingForOperand){calculate();}calcPreviousValue=parseFloat(calcCurrentValue);calcOperator=value;calcWaitingForOperand=true;break;case 'eq':if(calcOperator&&calcPreviousValue!==null){calculate();calcOperator=null;calcPreviousValue=null;}break;case 'clear':calcCurrentValue='0';calcOperator=null;calcPreviousValue=null;calcWaitingForOperand=false;break;case 'sign':calcCurrentValue=(parseFloat(calcCurrentValue)*-1).toString();break;case 'percent':calcCurrentValue=(parseFloat(calcCurrentValue)/100).toString();calcWaitingForOperand=false;break;} updateCalcDisplay(); } function calculate() { const current=parseFloat(calcCurrentValue);const previous=calcPreviousValue;if(isNaN(current)||isNaN(previous))return;let result=0;switch(calcOperator){case '+':result=previous+current;break;case '-':result=previous-current;break;case '*':result=previous*current;break;case '/':result=previous/current;break;} calcCurrentValue=parseFloat(result.toPrecision(12)).toString();calcWaitingForOperand=false; } calcButtons.forEach(button => button.addEventListener('click', () => { const type=button.dataset.calc; const value=type==='op'||type==='num'||type==='decimal'?button.textContent:null; handleCalcInput(type,value); }));
+        // 2. Unit Converter
+        const unitTypeSelect = document.getElementById('unit-type-select'); const unitFromSelect = document.getElementById('unit-from-select'); const unitToSelect = document.getElementById('unit-to-select'); const unitInputValue = document.getElementById('unit-input-value'); const unitConvertBtn = document.getElementById('unit-convert-btn'); const unitResult = document.getElementById('unit-result'); const units = { length: { Meter: 1, Kilometer: 1000, Centimeter: 0.01, Millimeter: 0.001, Mile: 1609.34, Yard: 0.9144, Foot: 0.3048, Inch: 0.0254 }, weight: { Kilogram: 1, Gram: 0.001, Milligram: 0.000001, Pound: 0.453592, Ounce: 0.0283495 }, temperature: { Celsius: 'c', Fahrenheit: 'f', Kelvin: 'k' } }; function populateUnitOptions() { const type=unitTypeSelect.value;const options=Object.keys(units[type]);unitFromSelect.innerHTML=options.map(unit=>`<option value="${unit}">${unit}</option>`).join('');unitToSelect.innerHTML=options.map(unit=>`<option value="${unit}">${unit}</option>`).join('');if(options.length>1)unitToSelect.selectedIndex=1; } function convertUnits() { const type=unitTypeSelect.value;const fromUnit=unitFromSelect.value;const toUnit=unitToSelect.value;const inputValue=parseFloat(unitInputValue.value);if(isNaN(inputValue)){unitResult.textContent="Invalid number.";return;}let resultValue;if(type==='temperature'){const from=units.temperature[fromUnit];const to=units.temperature[toUnit];if(from==='c'){if(to==='f')resultValue=(inputValue*9/5)+32;else if(to==='k')resultValue=inputValue+273.15;else resultValue=inputValue;}else if(from==='f'){if(to==='c')resultValue=(inputValue-32)*5/9;else if(to==='k')resultValue=(inputValue-32)*5/9+273.15;else resultValue=inputValue;}else{if(to==='c')resultValue=inputValue-273.15;else if(to==='f')resultValue=(inputValue-273.15)*9/5+32;else resultValue=inputValue;}resultValue=resultValue.toFixed(2);}else{const fromFactor=units[type][fromUnit];const toFactor=units[type][toUnit];const valueInBase=inputValue*fromFactor;resultValue=valueInBase/toFactor;resultValue=parseFloat(resultValue.toPrecision(10));}unitResult.textContent=`${inputValue} ${fromUnit} = ${resultValue} ${toUnit}`; } unitTypeSelect.addEventListener('change', populateUnitOptions); unitConvertBtn.addEventListener('click', convertUnits); unitInputValue.addEventListener('input', convertUnits); unitFromSelect.addEventListener('change', convertUnits); unitToSelect.addEventListener('change', convertUnits);
+        // 3. Text Analyzer
+        const textAnalyzerInput = document.getElementById('text-analyzer-input'); const textCharCount = document.getElementById('text-char-count'); const textWordCount = document.getElementById('text-word-count'); const textLineCount = document.getElementById('text-line-count'); const textSentenceCount = document.getElementById('text-sentence-count'); const caseButtons = document.querySelectorAll('[data-case]'); function analyzeText() { const text=textAnalyzerInput.value;textCharCount.textContent=text.length;textWordCount.textContent=text.trim()===''?0:text.trim().split(/\s+/).length;textLineCount.textContent=text.split('\n').length;textSentenceCount.textContent=text.split(/[.!?]+/).filter(Boolean).length; } textAnalyzerInput.addEventListener('input', analyzeText); caseButtons.forEach(button => button.addEventListener('click', () => { const action=button.dataset.case;let text=textAnalyzerInput.value;switch(action){case 'upper':text=text.toUpperCase();break;case 'lower':text=text.toLowerCase();break;case 'sentence':text=text.toLowerCase().replace(/(^\s*\w|[.!?]\s*\w)/g,c=>c.toUpperCase());break;case 'title':text=text.toLowerCase().split(' ').map(word=>word.charAt(0).toUpperCase()+word.slice(1)).join(' ');break;case 'clear':text='';break;}textAnalyzerInput.value=text;analyzeText(); }));
+        // 4. Color Converter
+        const colorPreview = document.getElementById('color-preview'); const colorHexInput = document.getElementById('color-hex-input'); const colorRgbInput = document.getElementById('color-rgb-input'); const colorHslInput = document.getElementById('color-hsl-input'); const colorPickerInput = document.getElementById('color-picker-input'); function updateColor(source, value) { let color=tinycolor(value);if(!color||!color.isValid()){if(source==='rgb'&&value.startsWith('rgb')){try{const parts=value.match(/\d+/g);if(parts&&parts.length===3)color=tinycolor({r:parts[0],g:parts[1],b:parts[2]});}catch{}}else if(source==='hsl'&&value.startsWith('hsl')){try{const parts=value.match(/[\d.]+/g);if(parts&&parts.length===3)color=tinycolor({h:parts[0],s:parts[1]/100,l:parts[2]/100});}catch{}}}if(color&&color.isValid()){const hex=color.toHexString().toUpperCase();const rgb=color.toRgbString();const hsl=color.toHslString();if(source!=='hex')colorHexInput.value=hex;if(source!=='rgb')colorRgbInput.value=rgb;if(source!=='hsl')colorHslInput.value=hsl;if(source!=='picker')colorPickerInput.value=hex;colorPreview.style.backgroundColor=hex;}else{} } const tinycolor = window.tinycolor || function(c) { if(typeof c==='string'&&c.match(/^#([0-9a-f]{3}){1,2}$/i)){return {isValid:()=>true,toHexString:()=>c,toRgbString:()=>c,toHslString:()=>c};} if(typeof c==='object'&&c.r!==undefined)return {isValid:()=>true,toHexString:()=>'#000000',toRgbString:()=>'rgb(0,0,0)',toHslString:()=>'hsl(0,0%,0%)'}; return {isValid:()=>false}; }; colorHexInput.addEventListener('input', (e) => updateColor('hex', e.target.value)); colorRgbInput.addEventListener('input', (e) => updateColor('rgb', e.target.value)); colorHslInput.addEventListener('input', (e) => updateColor('hsl', e.target.value)); colorPickerInput.addEventListener('input', (e) => updateColor('picker', e.target.value));
+        // 5. Password Generator
+        const passwordOutput = document.getElementById('password-output'); const passwordCopyBtn = document.getElementById('password-copy-btn'); const passwordGenerateBtn = document.getElementById('password-generate-btn'); const passwordLength = document.getElementById('password-length'); const passwordLengthValue = document.getElementById('password-length-value'); const includeUppercase = document.getElementById('password-include-uppercase'); const includeLowercase = document.getElementById('password-include-lowercase'); const includeNumbers = document.getElementById('password-include-numbers'); const includeSymbols = document.getElementById('password-include-symbols'); const chars = { upper: "ABCDEFGHIJKLMNOPQRSTUVWXYZ", lower: "abcdefghijklmnopqrstuvwxyz", number: "0123456789", symbol: "!@#$%^&*()_+~`|}{[]:;?><,./-=" }; function generatePassword() { const length=parseInt(passwordLength.value);let allowedChars="";if(includeUppercase.checked)allowedChars+=chars.upper;if(includeLowercase.checked)allowedChars+=chars.lower;if(includeNumbers.checked)allowedChars+=chars.number;if(includeSymbols.checked)allowedChars+=chars.symbol;if(allowedChars===""){passwordOutput.value="Select types!";return;}let generatedPassword="";if(includeUppercase.checked)generatedPassword+=chars.upper[Math.floor(Math.random()*chars.upper.length)];if(includeLowercase.checked)generatedPassword+=chars.lower[Math.floor(Math.random()*chars.lower.length)];if(includeNumbers.checked)generatedPassword+=chars.number[Math.floor(Math.random()*chars.number.length)];if(includeSymbols.checked)generatedPassword+=chars.symbol[Math.floor(Math.random()*chars.symbol.length)];for(let i=generatedPassword.length;i<length;i++){generatedPassword+=allowedChars[Math.floor(Math.random()*allowedChars.length)];}generatedPassword=generatedPassword.split('').sort(()=>0.5-Math.random()).join('');passwordOutput.value=generatedPassword; } function copyPassword() { if(!passwordOutput.value||passwordOutput.value.startsWith("Select"))return;navigator.clipboard.writeText(passwordOutput.value).then(()=>{passwordCopyBtn.innerHTML='<i class="fas fa-check"></i>';setTimeout(()=>{passwordCopyBtn.innerHTML='<i class="far fa-copy"></i>';},1500);}).catch(err=>console.error('Copy failed',err)); } passwordLength.addEventListener('input', (e) => { passwordLengthValue.textContent=e.target.value; generatePassword(); }); passwordGenerateBtn.addEventListener('click', generatePassword); passwordCopyBtn.addEventListener('click', copyPassword); [includeUppercase, includeLowercase, includeNumbers, includeSymbols].forEach(el => el.addEventListener('change', generatePassword));
+        // 6. Base64
+        const base64Input = document.getElementById('base64-input'); const base64Output = document.getElementById('base64-output'); const base64EncodeBtn = document.getElementById('base64-encode-btn'); const base64DecodeBtn = document.getElementById('base64-decode-btn'); const base64ClearBtn = document.getElementById('base64-clear-btn'); const base64Error = document.getElementById('base64-error'); base64EncodeBtn.addEventListener('click', () => { base64Error.textContent='';try{base64Output.textContent=btoa(unescape(encodeURIComponent(base64Input.value)));}catch(e){base64Error.textContent="Encoding failed.";base64Output.textContent='';console.error(e);} }); base64DecodeBtn.addEventListener('click', () => { base64Error.textContent='';try{base64Output.textContent=decodeURIComponent(escape(atob(base64Input.value)));}catch(e){base64Error.textContent="Decoding failed.";base64Output.textContent='';console.error(e);} }); base64ClearBtn.addEventListener('click', () => { base64Input.value='';base64Output.textContent='...';base64Error.textContent=''; });
+        // 7. Currency Converter
+        const currencyAmount = document.getElementById('currency-amount'); const currencyFrom = document.getElementById('currency-from'); const currencyTo = document.getElementById('currency-to'); const currencyConvertBtn = document.getElementById('currency-convert-btn'); const currencyResult = document.getElementById('currency-result'); const placeholderRates = { "USD": 1, "EUR": 0.92, "GBP": 0.79, "JPY": 150.50, "CAD": 1.35, "AUD": 1.52, "INR": 83.30, "LKR": 300.00 }; function populateCurrencies() { const currencies=Object.keys(placeholderRates);currencyFrom.innerHTML=currencies.map(c=>`<option value="${c}">${c}</option>`).join('');currencyTo.innerHTML=currencies.map(c=>`<option value="${c}">${c}</option>`).join('');currencyFrom.value="USD";currencyTo.value="LKR"; } function convertCurrency() { const amount=parseFloat(currencyAmount.value);const from=currencyFrom.value;const to=currencyTo.value;if(isNaN(amount)){currencyResult.textContent="Invalid amount.";return;}const rateFrom=placeholderRates[from];const rateTo=placeholderRates[to];if(!rateFrom||!rateTo){currencyResult.textContent="Rate error.";return;}const amountInUSD=amount/rateFrom;const convertedAmount=amountInUSD*rateTo;currencyResult.textContent=`${amount.toFixed(2)} ${from} = ${convertedAmount.toFixed(2)} ${to}`; } currencyConvertBtn.addEventListener('click', convertCurrency); currencyAmount.addEventListener('input', convertCurrency); currencyFrom.addEventListener('change', convertCurrency); currencyTo.addEventListener('change', convertCurrency);
+        // 8. Lorem Ipsum
+        const loremCount = document.getElementById('lorem-count'); const loremGenerateBtn = document.getElementById('lorem-generate-btn'); const loremCopyBtn = document.getElementById('lorem-copy-btn'); const loremOutput = document.getElementById('lorem-output'); const loremText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."; function generateLorem() { const count = parseInt(loremCount.value) || 1; let output = ""; for (let i = 0; i < count; i++) { output += loremText + (i < count - 1 ? "\n\n" : ""); } loremOutput.value = output; } function copyLorem() { if (!loremOutput.value) return; navigator.clipboard.writeText(loremOutput.value).then(() => { loremCopyBtn.innerHTML = '<i class="fas fa-check"></i> Copied'; setTimeout(() => { loremCopyBtn.innerHTML = '<i class="far fa-copy"></i> Copy'; }, 1500); }).catch(err => console.error('Copy failed', err)); } loremGenerateBtn.addEventListener('click', generateLorem); loremCopyBtn.addEventListener('click', copyLorem);
+        // 9. BMI Calculator
+        const bmiWeight = document.getElementById('bmi-weight'); const bmiHeight = document.getElementById('bmi-height'); const bmiCalculateBtn = document.getElementById('bmi-calculate-btn'); const bmiResult = document.getElementById('bmi-result'); function calculateBMI() { const weight = parseFloat(bmiWeight.value); const heightCm = parseFloat(bmiHeight.value); if (isNaN(weight) || isNaN(heightCm) || weight <= 0 || heightCm <= 0) { bmiResult.textContent = "Enter valid weight (kg) & height (cm)."; return; } const heightM = heightCm / 100; const bmi = weight / (heightM * heightM); let category = ""; if (bmi < 18.5) category = "Underweight"; else if (bmi < 25) category = "Normal"; else if (bmi < 30) category = "Overweight"; else category = "Obesity"; bmiResult.textContent = `BMI: ${bmi.toFixed(1)} (${category})`; } bmiCalculateBtn.addEventListener('click', calculateBMI);
+        // 10. Date Calculator
+        const dateStart = document.getElementById('date-start'); const dateEnd = document.getElementById('date-end'); const dateCalculateBtn = document.getElementById('date-calculate-btn'); const dateResult = document.getElementById('date-result'); function calculateDateDifference() { const start = dateStart.value; const end = dateEnd.value; if (!start || !end) { dateResult.textContent = "Select both dates."; return; } const startDate = new Date(start); const endDate = new Date(end); if (isNaN(startDate) || isNaN(endDate)) { dateResult.textContent = "Invalid date format."; return; } const diffTime = Math.abs(endDate - startDate); const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); dateResult.textContent = `Difference: ${diffDays} day(s)`; } dateCalculateBtn.addEventListener('click', calculateDateDifference);
+        // 11. JSON Formatter
+        const jsonInput = document.getElementById('json-input'); const jsonFormatBtn = document.getElementById('json-format-btn'); const jsonValidateBtn = document.getElementById('json-validate-btn'); const jsonClearBtn = document.getElementById('json-clear-btn'); const jsonOutput = document.getElementById('json-output'); const jsonError = document.getElementById('json-error'); function formatJSON() { jsonError.textContent = ''; try { const obj = JSON.parse(jsonInput.value); const formatted = JSON.stringify(obj, null, 2); jsonInput.value = formatted; jsonOutput.textContent = "Formatted!"; jsonOutput.style.color = 'lightgreen'; } catch (e) { jsonError.textContent = `Invalid JSON: ${e.message}`; jsonOutput.textContent = "Formatting failed."; jsonOutput.style.color = 'inherit'; } } function validateJSON() { jsonError.textContent = ''; try { JSON.parse(jsonInput.value); jsonOutput.textContent = "JSON is valid!"; jsonOutput.style.color = 'lightgreen'; } catch (e) { jsonError.textContent = `Invalid JSON: ${e.message}`; jsonOutput.textContent = "JSON is invalid."; jsonOutput.style.color = 'inherit'; } } jsonFormatBtn.addEventListener('click', formatJSON); jsonValidateBtn.addEventListener('click', validateJSON); jsonClearBtn.addEventListener('click', () => { jsonInput.value = ''; jsonOutput.textContent = '...'; jsonError.textContent = ''; jsonOutput.style.color = 'inherit'; });
+
+        // 12. Image Converter (Basic)
+        const imageInputFile = document.getElementById('image-input-file');
+        const imageOutputFormat = document.getElementById('image-output-format');
+        const imageQuality = document.getElementById('image-quality');
+        const imageConvertBtn = document.getElementById('image-convert-btn');
+        const imageOutputPreview = document.getElementById('image-output-preview');
+        const imageDownloadLink = document.getElementById('image-download-link');
+        let originalImage = null;
+        let originalImageType = '';
+
+        imageInputFile.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                originalImageType = file.type;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    originalImage = new Image();
+                    originalImage.onload = () => {
+                        imageOutputPreview.innerHTML = ''; // Clear previous preview
+                        imageOutputPreview.appendChild(originalImage);
+                        originalImage.style.maxWidth = '100%';
+                        originalImage.style.maxHeight = '200px';
+                        imageDownloadLink.classList.add('hidden'); // Hide download link until converted
+                    };
+                    originalImage.src = event.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        imageOutputFormat.addEventListener('change', () => {
+            imageQuality.disabled = imageOutputFormat.value !== 'image/jpeg';
+        });
+
+        imageConvertBtn.addEventListener('click', () => {
+            if (!originalImage) { alert("Please select an image first."); return; }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = originalImage.naturalWidth;
+            canvas.height = originalImage.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(originalImage, 0, 0);
+
+            const format = imageOutputFormat.value;
+            const quality = parseFloat(imageQuality.value);
+            const dataUrl = canvas.toDataURL(format, format === 'image/jpeg' ? quality : undefined);
+
+            // Update preview with converted image (optional, can be slow for large images)
+            // const convertedImg = new Image();
+            // convertedImg.src = dataUrl;
+            // convertedImg.style.maxWidth = '100%';
+            // convertedImg.style.maxHeight = '200px';
+            // imageOutputPreview.innerHTML = '';
+            // imageOutputPreview.appendChild(convertedImg);
+
+            imageOutputPreview.textContent = `Converted to ${format.split('/')[1].toUpperCase()}. Click Download.`;
+            imageDownloadLink.href = dataUrl;
+            imageDownloadLink.download = `converted-image.${format.split('/')[1]}`;
+            imageDownloadLink.classList.remove('hidden');
+        });
+
+
+        // 13. QR Code Generator
+        const qrInputText = document.getElementById('qr-input-text');
+        const qrGenerateBtn = document.getElementById('qr-generate-btn');
+        const qrCodeOutput = document.getElementById('qr-code-output');
+        const qrDownloadLink = document.getElementById('qr-download-link');
+        let qrCodeInstance = null;
+
+        function generateQRCode() {
+            const text = qrInputText.value.trim();
+            if (!text) { alert("Please enter text or URL for the QR code."); return; }
+
+            qrCodeOutput.innerHTML = ''; // Clear previous QR code
+            qrDownloadLink.classList.add('hidden'); // Hide download link
+
+            try {
+                qrCodeInstance = new QRCode(qrCodeOutput, {
+                    text: text,
+                    width: 180,
+                    height: 180,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H // High correction level
+                });
+
+                // Make the image downloadable after a short delay
+                setTimeout(() => {
+                    const qrCanvas = qrCodeOutput.querySelector('canvas');
+                    const qrImage = qrCodeOutput.querySelector('img');
+                    if (qrCanvas) {
+                        qrDownloadLink.href = qrCanvas.toDataURL("image/png");
+                        qrDownloadLink.classList.remove('hidden');
+                    } else if (qrImage) {
+                         // If the library generated an img tag directly (fallback)
+                         // Create a canvas to draw the image for download
+                         const canvas = document.createElement('canvas');
+                         canvas.width = qrImage.width;
+                         canvas.height = qrImage.height;
+                         const ctx = canvas.getContext('2d');
+                         ctx.drawImage(qrImage, 0, 0);
+                         qrDownloadLink.href = canvas.toDataURL("image/png");
+                         qrDownloadLink.classList.remove('hidden');
+                    }
+                }, 200); // Delay ensures canvas/img is rendered
+
+            } catch (error) {
+                console.error("QR Code generation failed:", error);
+                qrCodeOutput.textContent = "Error generating QR Code.";
+            }
+        }
+        qrGenerateBtn.addEventListener('click', generateQRCode);
+
+        // 14. Notes
+        const notesTextarea = document.getElementById('notes-textarea');
+        const notesClearBtn = document.getElementById('notes-clear-btn');
+        const NOTES_STORAGE_KEY = 'digitalToolsNotes';
+
+        function loadNotes() {
+            notesTextarea.value = localStorage.getItem(NOTES_STORAGE_KEY) || '';
+        }
+        function saveNotes() {
+            localStorage.setItem(NOTES_STORAGE_KEY, notesTextarea.value);
+        }
+        notesTextarea.addEventListener('input', saveNotes);
+        notesClearBtn.addEventListener('click', () => {
+            if(confirm("Are you sure you want to clear all notes?")) {
+                notesTextarea.value = '';
+                localStorage.removeItem(NOTES_STORAGE_KEY);
+            }
+        });
+
+        // 15. Stopwatch
+        const stopwatchDisplay = document.getElementById('stopwatch-display');
+        const stopwatchStartBtn = document.getElementById('stopwatch-start-btn');
+        const stopwatchStopBtn = document.getElementById('stopwatch-stop-btn');
+        const stopwatchResetBtn = document.getElementById('stopwatch-reset-btn');
+        let stopwatchInterval = null;
+        let stopwatchStartTime = 0;
+        let stopwatchElapsedTime = 0;
+        let stopwatchRunning = false;
+
+        function formatStopwatchTime(time) {
+            const ms = String(time % 1000).padStart(3, '0');
+            const totalSeconds = Math.floor(time / 1000);
+            const seconds = String(totalSeconds % 60).padStart(2, '0');
+            const totalMinutes = Math.floor(totalSeconds / 60);
+            const minutes = String(totalMinutes % 60).padStart(2, '0');
+            const hours = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}.${ms}`;
+        }
+
+        function updateStopwatch() {
+            const currentTime = Date.now();
+            stopwatchElapsedTime = currentTime - stopwatchStartTime;
+            stopwatchDisplay.textContent = formatStopwatchTime(stopwatchElapsedTime);
+        }
+
+        stopwatchStartBtn.addEventListener('click', () => {
+            if (!stopwatchRunning) {
+                stopwatchStartTime = Date.now() - stopwatchElapsedTime; // Adjust start time if resuming
+                stopwatchInterval = setInterval(updateStopwatch, 10); // Update frequently for ms
+                stopwatchRunning = true;
+            }
+        });
+        stopwatchStopBtn.addEventListener('click', () => {
+            if (stopwatchRunning) {
+                clearInterval(stopwatchInterval);
+                stopwatchRunning = false;
+            }
+        });
+        stopwatchResetBtn.addEventListener('click', () => {
+             clearInterval(stopwatchInterval);
+             stopwatchRunning = false;
+             stopwatchElapsedTime = 0;
+             stopwatchStartTime = 0;
+             stopwatchDisplay.textContent = formatStopwatchTime(0);
+        });
+
+        // 16. On-Page Ruler
+        const rulerToggleBtn = document.getElementById('ruler-toggle-btn');
+        const onPageRuler = document.getElementById('on-page-ruler');
+        const rulerMeasure = document.getElementById('ruler-measure');
+        let isRulerVisible = false;
+        let isDraggingRuler = false;
+        let rulerStartX, rulerStartY, rulerOffsetX, rulerOffsetY;
+
+        rulerToggleBtn.addEventListener('click', () => {
+            isRulerVisible = !isRulerVisible;
+            onPageRuler.style.display = isRulerVisible ? 'block' : 'none';
+            rulerToggleBtn.innerHTML = isRulerVisible ? '<i class="fas fa-eye-slash"></i> Hide Ruler' : '<i class="fas fa-ruler"></i> Show Ruler';
+            if (isRulerVisible) { // Reset position when shown
+                 onPageRuler.style.left = '50px';
+                 onPageRuler.style.top = '100px';
+                 onPageRuler.style.width = '300px';
+                 rulerMeasure.textContent = '300px';
+            }
+        });
+
+        onPageRuler.addEventListener('mousedown', (e) => {
+            isDraggingRuler = true;
+            rulerStartX = e.clientX;
+            rulerStartY = e.clientY;
+            rulerOffsetX = onPageRuler.offsetLeft;
+            rulerOffsetY = onPageRuler.offsetTop;
+            onPageRuler.style.cursor = 'grabbing';
+            // Prevent text selection during drag
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDraggingRuler) return;
+            const newX = rulerOffsetX + (e.clientX - rulerStartX);
+            const newY = rulerOffsetY + (e.clientY - rulerStartY);
+            onPageRuler.style.left = `${newX}px`;
+            onPageRuler.style.top = `${newY}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDraggingRuler) {
+                isDraggingRuler = false;
+                onPageRuler.style.cursor = 'grab';
+            }
+        });
+         // Basic resizing (could be improved with handles)
+         onPageRuler.addEventListener('dblclick', () => {
+             const currentWidth = onPageRuler.offsetWidth;
+             const newWidth = prompt("Enter new ruler width in pixels:", currentWidth);
+             if (newWidth && !isNaN(parseInt(newWidth))) {
+                 const width = parseInt(newWidth);
+                 onPageRuler.style.width = `${width}px`;
+                 rulerMeasure.textContent = `${width}px`;
+             }
+         });
+
+
+        // 17. Percentage Calculator
+        const percVal1 = document.getElementById('perc-val1'); const percVal2 = document.getElementById('perc-val2'); const percCalc1Btn = document.getElementById('perc-calc1-btn'); const percRes1 = document.getElementById('perc-res1');
+        const percVal3 = document.getElementById('perc-val3'); const percVal4 = document.getElementById('perc-val4'); const percCalc2Btn = document.getElementById('perc-calc2-btn'); const percRes2 = document.getElementById('perc-res2');
+        percCalc1Btn.addEventListener('click', () => { const x = parseFloat(percVal1.value); const y = parseFloat(percVal2.value); if(isNaN(x) || isNaN(y)) { percRes1.textContent = "Invalid input"; return; } percRes1.textContent = `Result: ${(x / 100) * y}`; });
+        percCalc2Btn.addEventListener('click', () => { const x = parseFloat(percVal3.value); const y = parseFloat(percVal4.value); if(isNaN(x) || isNaN(y) || y === 0) { percRes2.textContent = "Invalid input"; return; } percRes2.textContent = `Result: ${(x / y) * 100}%`; });
+
+        // 18. Case Converter (Standalone)
+        const caseInput = document.getElementById('case-input'); const caseOutput = document.getElementById('case-output'); const advCaseButtons = document.querySelectorAll('[data-adv-case]'); const caseClearBtn = document.getElementById('case-clear-btn'); const caseCopyBtn = document.getElementById('case-copy-btn');
+        advCaseButtons.forEach(button => button.addEventListener('click', () => { const action = button.dataset.advCase; let text = caseInput.value; let result = ''; switch(action){ case 'upper': result = text.toUpperCase(); break; case 'lower': result = text.toLowerCase(); break; case 'sentence': result = text.toLowerCase().replace(/(^\s*\w|[.!?]\s*\w)/g, c => c.toUpperCase()); break; case 'title': result = text.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '); break; case 'toggle': result = text.split('').map(c => c === c.toUpperCase() ? c.toLowerCase() : c.toUpperCase()).join(''); break; case 'alternating': result = text.split('').map((c, i) => i % 2 === 0 ? c.toLowerCase() : c.toUpperCase()).join(''); break; } caseOutput.value = result; }));
+        caseClearBtn.addEventListener('click', () => { caseInput.value = ''; caseOutput.value = ''; });
+        caseCopyBtn.addEventListener('click', () => { if(!caseOutput.value) return; navigator.clipboard.writeText(caseOutput.value).then(() => { caseCopyBtn.innerHTML = '<i class="fas fa-check"></i> Copied'; setTimeout(() => { caseCopyBtn.innerHTML = '<i class="far fa-copy"></i> Copy'; }, 1500); }); });
+
+        // 19. URL Encoder/Decoder
+        const urlInput = document.getElementById('url-input'); const urlOutput = document.getElementById('url-output'); const urlEncodeBtn = document.getElementById('url-encode-btn'); const urlDecodeBtn = document.getElementById('url-decode-btn'); const urlClearBtn = document.getElementById('url-clear-btn'); const urlError = document.getElementById('url-error');
+        urlEncodeBtn.addEventListener('click', () => { urlError.textContent = ''; try { urlOutput.value = encodeURIComponent(urlInput.value); } catch(e) { urlError.textContent = "Encoding failed."; } });
+        urlDecodeBtn.addEventListener('click', () => { urlError.textContent = ''; try { urlOutput.value = decodeURIComponent(urlInput.value); } catch(e) { urlError.textContent = "Decoding failed. Invalid input?"; } });
+        urlClearBtn.addEventListener('click', () => { urlInput.value = ''; urlOutput.value = ''; urlError.textContent = ''; });
+
+        // 20. MD5 Generator
+        const md5Input = document.getElementById('md5-input'); const md5GenerateBtn = document.getElementById('md5-generate-btn'); const md5Output = document.getElementById('md5-output'); const md5CopyBtn = document.getElementById('md5-copy-btn');
+        md5GenerateBtn.addEventListener('click', () => { if (typeof CryptoJS !== 'undefined') { md5Output.textContent = CryptoJS.MD5(md5Input.value).toString(); } else { md5Output.textContent = "CryptoJS library not loaded."; } });
+        md5CopyBtn.addEventListener('click', () => { if(!md5Output.textContent || md5Output.textContent === '...') return; navigator.clipboard.writeText(md5Output.textContent).then(() => { md5CopyBtn.innerHTML = '<i class="fas fa-check"></i> Copied'; setTimeout(() => { md5CopyBtn.innerHTML = '<i class="far fa-copy"></i> Copy'; }, 1500); }); });
+
+        // 21. CSV to JSON
+        const csvInput = document.getElementById('csv-input'); const csvDelimiter = document.getElementById('csv-delimiter'); const csvConvertBtn = document.getElementById('csv-convert-btn'); const csvClearBtn = document.getElementById('csv-clear-btn'); const csvOutput = document.getElementById('csv-output'); const csvError = document.getElementById('csv-error'); const csvCopyBtn = document.getElementById('csv-copy-btn');
+        function convertCsvToJson() { csvError.textContent = ''; try { const delimiter = csvDelimiter.value || ','; const lines = csvInput.value.trim().split('\n'); if (lines.length < 2) { csvError.textContent = "CSV needs at least a header and one data row."; return; } const headers = lines[0].split(delimiter).map(h => h.trim()); const jsonArray = []; for (let i = 1; i < lines.length; i++) { const values = lines[i].split(delimiter); const obj = {}; for (let j = 0; j < headers.length; j++) { obj[headers[j]] = values[j]?.trim() || ''; } jsonArray.push(obj); } csvOutput.value = JSON.stringify(jsonArray, null, 2); } catch (e) { csvError.textContent = `Conversion failed: ${e.message}`; csvOutput.value = ''; } }
+        csvConvertBtn.addEventListener('click', convertCsvToJson);
+        csvClearBtn.addEventListener('click', () => { csvInput.value = ''; csvOutput.value = ''; csvError.textContent = ''; });
+        csvCopyBtn.addEventListener('click', () => { if(!csvOutput.value) return; navigator.clipboard.writeText(csvOutput.value).then(() => { csvCopyBtn.innerHTML = '<i class="fas fa-check"></i> Copied'; setTimeout(() => { csvCopyBtn.innerHTML = '<i class="far fa-copy"></i> Copy JSON'; }, 1500); }); });
+
+        // 22. Font Viewer
+        const fontInputText = document.getElementById('font-input-text'); const fontSelect = document.getElementById('font-select'); const fontPreview = document.getElementById('font-preview');
+        const commonFonts = ["Arial", "Verdana", "Helvetica", "Tahoma", "Trebuchet MS", "Times New Roman", "Georgia", "Garamond", "Courier New", "Brush Script MT", "Impact", "Comic Sans MS"]; // Add more as needed
+        function populateFonts() { fontSelect.innerHTML = commonFonts.map(f => `<option value="${f}">${f}</option>`).join(''); updateFontPreview(); }
+        function updateFontPreview() { const selectedFont = fontSelect.value; const text = fontInputText.value; fontPreview.textContent = text; fontPreview.style.fontFamily = selectedFont; }
+        fontSelect.addEventListener('change', updateFontPreview);
+        fontInputText.addEventListener('input', updateFontPreview);
+
+        // 23. Text Compressor (RLE)
+        const compressInput = document.getElementById('compress-input'); const compressBtn = document.getElementById('compress-btn'); const decompressBtn = document.getElementById('decompress-btn'); const compressClearBtn = document.getElementById('compress-clear-btn'); const compressOutput = document.getElementById('compress-output'); const compressRatio = document.getElementById('compress-ratio');
+        function compressRLE(text) { if (!text) return ''; let result = ''; let count = 1; for (let i = 0; i < text.length; i++) { if (i + 1 < text.length && text[i] === text[i+1]) { count++; } else { result += count + text[i]; count = 1; } } return result; }
+        function decompressRLE(text) { if (!text) return ''; let result = ''; let i = 0; while (i < text.length) { let count = ''; while (i < text.length && !isNaN(parseInt(text[i]))) { count += text[i]; i++; } if (i < text.length) { result += text[i].repeat(parseInt(count || 1)); i++; } } return result; }
+        compressBtn.addEventListener('click', () => { const input = compressInput.value; const output = compressRLE(input); compressOutput.value = output; compressRatio.textContent = input.length > 0 ? `Ratio: ${(output.length / input.length * 100).toFixed(1)}%` : ''; });
+        decompressBtn.addEventListener('click', () => { const input = compressInput.value; const output = decompressRLE(input); compressOutput.value = output; compressRatio.textContent = ''; });
+        compressClearBtn.addEventListener('click', () => { compressInput.value = ''; compressOutput.value = ''; compressRatio.textContent = ''; });
+
+
+        // --- Clear Data ---
+        if (clearDataBtn) {
+            clearDataBtn.addEventListener('click', () => {
+                if (confirm("Clear all settings & notes?")) {
+                    localStorage.removeItem('digitalToolsTheme');
+                    localStorage.removeItem(NOTES_STORAGE_KEY); // Clear notes
+                    alert("Local data cleared.");
+                    loadTheme();
+                    loadNotes(); // Reload notes (will be empty)
+                }
+            });
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTheme();
+
+            // Tool switching listeners
+            headerLinks.forEach(link => link.addEventListener('click', (e) => { if (link.parentElement.classList.contains('opacity-50')) { e.preventDefault(); return; } e.preventDefault(); const tool = link.dataset.tool; if (tool) { switchTool(tool); } }));
+            toolLauncherCards.forEach(card => { if (!card.classList.contains('coming-soon')) { card.addEventListener('click', () => { const tool = card.dataset.tool; if (tool) { switchTool(tool); } }); } });
+
+            // Initialize ALL tools
+            updateCalcDisplay(); populateUnitOptions(); convertUnits(); analyzeText();
+            updateColor('picker', '#2563eb'); generatePassword(); populateCurrencies(); convertCurrency();
+            generateLorem(); loadNotes(); populateFonts();
+
+            // Set initial active tool
+            const initialTool = window.location.hash.substring(1) || 'dashboard';
+            setTimeout(() => switchTool(initialTool), 50);
+
+            console.log("Digital Tools App Initialized with expanded tools.");
+        });
+
+    </script>
+
+</body>
+</html>
